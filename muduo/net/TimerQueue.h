@@ -67,25 +67,37 @@ class TimerQueue : noncopyable
   // 活动定时任务集合
   typedef std::set<ActiveTimer> ActiveTimerSet;
 
+  // 在IO线程中添加定时任务
   void addTimerInLoop(Timer* timer);
+  // 在IO线程中取消定时任务
   void cancelInLoop(TimerId timerId);
   // called when timerfd alarms
+  // 一旦poller->poll()触发timerfd从阻塞中返回，channel分派IO事件时会回调该函数
   void handleRead();
   // move out all expired timers
+  // 获取所有已经到期的定时任务
   std::vector<Entry> getExpired(Timestamp now);
+  // 重置
   void reset(const std::vector<Entry>& expired, Timestamp now);
 
+// 插入定时任务
   bool insert(Timer* timer);
 
+// 所属事件循环
   EventLoop* loop_;
+  // 用来与内核交互的定时器文件描述符和channel
   const int timerfd_;
   Channel timerfdChannel_;
   // Timer list sorted by expiration
+  // 按照到期时间排列的定时任务列表
   TimerList timers_;
 
   // for cancel()
+  // 活动定时任务集合
   ActiveTimerSet activeTimers_;
+  // 正在处理到期的定时任务
   bool callingExpiredTimers_; /* atomic */
+  // 被取消的活动定时任务集合
   ActiveTimerSet cancelingTimers_;
 };
 
