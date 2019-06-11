@@ -32,9 +32,11 @@ class TimerId;
 /// A best efforts timer queue.
 /// No guarantee that the callback will be on time.
 ///
+// 定时器队列
 class TimerQueue : noncopyable
 {
  public:
+ // 定时器队列中执行的任务一定是挂在某个loop上的，也就是说会在IO线程执行
   explicit TimerQueue(EventLoop* loop);
   ~TimerQueue();
 
@@ -43,10 +45,12 @@ class TimerQueue : noncopyable
   /// repeats if @c interval > 0.0.
   ///
   /// Must be thread safe. Usually be called from other threads.
+  // 向定时器队列添加定时任务，返回该定时任务的TimerId
   TimerId addTimer(TimerCallback cb,
                    Timestamp when,
                    double interval);
 
+// 取消该定时任务
   void cancel(TimerId timerId);
 
  private:
@@ -54,9 +58,13 @@ class TimerQueue : noncopyable
   // FIXME: use unique_ptr<Timer> instead of raw pointers.
   // This requires heterogeneous comparison lookup (N3465) from C++14
   // so that we can find an T* in a set<unique_ptr<T>>.
+  // 时间戳和定时任务组成的项
   typedef std::pair<Timestamp, Timer*> Entry;
+  // 定时任务集合
   typedef std::set<Entry> TimerList;
+  // 活动定时任务
   typedef std::pair<Timer*, int64_t> ActiveTimer;
+  // 活动定时任务集合
   typedef std::set<ActiveTimer> ActiveTimerSet;
 
   void addTimerInLoop(Timer* timer);

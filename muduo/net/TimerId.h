@@ -23,15 +23,17 @@ class Timer;
 ///
 /// An opaque identifier, for canceling Timer.
 ///
+// TimerId唯一的标识了一个定时任务的ID
 class TimerId : public muduo::copyable
 {
  public:
+ // 默认构造函数，设置timer_指针为NULL，sequence_为0
   TimerId()
     : timer_(NULL),
       sequence_(0)
   {
   }
-
+// TimerId带参构造函数
   TimerId(Timer* timer, int64_t seq)
     : timer_(timer),
       sequence_(seq)
@@ -39,11 +41,13 @@ class TimerId : public muduo::copyable
   }
 
   // default copy-ctor, dtor and assignment are okay
-
+// 友元类
   friend class TimerQueue;
 
  private:
+ // 对应的定时任务
   Timer* timer_;
+// 序列号
   int64_t sequence_;
 };
 

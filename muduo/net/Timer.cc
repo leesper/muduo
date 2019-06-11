@@ -15,12 +15,14 @@ AtomicInt64 Timer::s_numCreated_;
 
 void Timer::restart(Timestamp now)
 {
+  // 如果是可重复的任务，我们就把下次执行的时间放在now+interval
   if (repeat_)
   {
     expiration_ = addTime(now, interval_);
   }
   else
   {
+    // 否则就设置为现在
     expiration_ = Timestamp::invalid();
   }
 }
