@@ -29,17 +29,24 @@ class PollPoller : public Poller
 {
  public:
 
+// 这是使用poll的Poller噢！
   PollPoller(EventLoop* loop);
+  // 析构
   ~PollPoller() override;
 
+// 阻塞等待IO事件发生的关键函数
   Timestamp poll(int timeoutMs, ChannelList* activeChannels) override;
+  // 更新channel
   void updateChannel(Channel* channel) override;
+  // 删除channel
   void removeChannel(Channel* channel) override;
 
  private:
+ // 把找到的活动channel塞给activeChannels
   void fillActiveChannels(int numEvents,
                           ChannelList* activeChannels) const;
 
+// 所有注册进内核的struct pollfd
   typedef std::vector<struct pollfd> PollFdList;
   PollFdList pollfds_;
 };

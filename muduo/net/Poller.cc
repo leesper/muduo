@@ -20,6 +20,7 @@ Poller::Poller(EventLoop* loop)
 
 Poller::~Poller() = default;
 
+// 这个channel是我的吗
 bool Poller::hasChannel(Channel* channel) const
 {
   assertInLoopThread();
