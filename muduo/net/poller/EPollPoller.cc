@@ -22,6 +22,7 @@ using namespace muduo::net;
 
 // On Linux, the constants of poll(2) and epoll(4)
 // are expected to be the same.
+// Linux中poll和epoll用的常量是一样的，但是MacOS使用的是kqueue，恐怕就没得这么简单咯
 static_assert(EPOLLIN == POLLIN,        "epoll uses same flag values as poll");
 static_assert(EPOLLPRI == POLLPRI,      "epoll uses same flag values as poll");
 static_assert(EPOLLOUT == POLLOUT,      "epoll uses same flag values as poll");
@@ -36,11 +37,15 @@ const int kAdded = 1;
 const int kDeleted = 2;
 }
 
+// 构造函数
 EPollPoller::EPollPoller(EventLoop* loop)
-  : Poller(loop),
-    epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
+  : Poller(loop), // 父类构造函数
+  // 初始化epollfd，EPOLL_CLOEXEC的意思是如果执行execvl则子进程关闭描述符
+    epollfd_(::epoll_create1(EPOLL_CLOEXEC)), 
+    // 初始有16个epoll_event元素
     events_(kInitEventListSize)
 {
+  // epollfd_为负表示出错了
   if (epollfd_ < 0)
   {
     LOG_SYSFATAL << "EPollPoller::EPollPoller";
@@ -49,12 +54,13 @@ EPollPoller::EPollPoller(EventLoop* loop)
 
 EPollPoller::~EPollPoller()
 {
-  ::close(epollfd_);
+  ::close(epollfd_); // 析构函数中关闭epollfd_释放资源
 }
 
 Timestamp EPollPoller::poll(int timeoutMs, ChannelList* activeChannels)
 {
   LOG_TRACE << "fd total count " << channels_.size();
+  // 阻塞等待IO事件的发生
   int numEvents = ::epoll_wait(epollfd_,
                                &*events_.begin(),
                                static_cast<int>(events_.size()),
@@ -64,18 +70,20 @@ Timestamp EPollPoller::poll(int timeoutMs, ChannelList* activeChannels)
   if (numEvents > 0)
   {
     LOG_TRACE << numEvents << " events happened";
+    // 把所有发生了IO事件的channel找出来放到activeChannels里面
     fillActiveChannels(numEvents, activeChannels);
     if (implicit_cast<size_t>(numEvents) == events_.size())
     {
+      // 如果发生的事件数量都达到数组大小了，我们把数组放大一倍
       events_.resize(events_.size()*2);
     }
   }
   else if (numEvents == 0)
   {
-    LOG_TRACE << "nothing happened";
+    LOG_TRACE << "nothing happened"; // 昨天晚上什么都没发生哦
   }
   else
-  {
+  { // 哎呀出错了
     // error happens, log uncommon ones
     if (savedErrno != EINTR)
     {
@@ -92,10 +100,13 @@ void EPollPoller::fillActiveChannels(int numEvents,
   assert(implicit_cast<size_t>(numEvents) <= events_.size());
   for (int i = 0; i < numEvents; ++i)
   {
+    // 把channel赋值给data.ptr然后原样透传回来，这是经常能见到的骚操作
     Channel* channel = static_cast<Channel*>(events_[i].data.ptr);
 #ifndef NDEBUG
+// 找到fd
     int fd = channel->fd();
     ChannelMap::const_iterator it = channels_.find(fd);
+    // 一通操作保证找到的channel一定是对的那个
     assert(it != channels_.end());
     assert(it->second == channel);
 #endif

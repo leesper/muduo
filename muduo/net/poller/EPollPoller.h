@@ -28,25 +28,31 @@ namespace net
 class EPollPoller : public Poller
 {
  public:
+ // 构造函数和析构函数
   EPollPoller(EventLoop* loop);
   ~EPollPoller() override;
 
+// 还是那个关键的核心函数
   Timestamp poll(int timeoutMs, ChannelList* activeChannels) override;
+  // 更新channel以及删除channel
   void updateChannel(Channel* channel) override;
   void removeChannel(Channel* channel) override;
 
  private:
+ // 初始事件列表长度
   static const int kInitEventListSize = 16;
-
+// 把操作码转换成方便人读的字符串
   static const char* operationToString(int op);
-
+// 用所有触发了IO事件的channel来填充activeChannels
   void fillActiveChannels(int numEvents,
                           ChannelList* activeChannels) const;
+  // 更新操作
   void update(int operation, Channel* channel);
-
+// epoll_event事件列表
   typedef std::vector<struct epoll_event> EventList;
-
+// 向内核注册的时候得到的描述符，epoll_create()
   int epollfd_;
+  // epoll_event事件列表
   EventList events_;
 };
 
