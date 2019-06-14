@@ -14,6 +14,7 @@
 
 using namespace muduo::net;
 
+// 工厂方法，返回PollPoller或者EPollPoller
 Poller* Poller::newDefaultPoller(EventLoop* loop)
 {
   if (::getenv("MUDUO_USE_POLL"))
